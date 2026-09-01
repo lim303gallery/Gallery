@@ -17,75 +17,40 @@ import { GalleryConfig, ExhibitionPost, RentalInquiry } from './types.ts';
 import { INITIAL_CONFIG, INITIAL_EXHIBITIONS, INITIAL_INQUIRIES } from './data.ts';
 import { Sliders, Shield, Info } from 'lucide-react';
 
+const CONFIG_STORAGE_KEY = 'lim303_gallery_config_v2';
+const POSTS_STORAGE_KEY = 'lim303_gallery_posts_v2';
+const INQUIRIES_STORAGE_KEY = 'lim303_gallery_inquiries_v2';
+
 export default function App() {
   const [config, setConfig] = useState<GalleryConfig>(() => {
-    const saved = localStorage.getItem('g629_config');
+    // Clear old legacy prototype keys from prior sessions
+    try {
+      localStorage.removeItem('g629_config');
+      localStorage.removeItem('g629_posts');
+      localStorage.removeItem('g629_inquiries');
+    } catch {
+      // ignore
+    }
+
+    const saved = localStorage.getItem(CONFIG_STORAGE_KEY);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (parsed.fontFamily === 'serif') {
-          parsed.fontFamily = 'sans';
-        }
-        if (parsed.pointColor === '#D4C3A3' || parsed.pointColor === '#8A9099') {
-          parsed.pointColor = '#003153';
-        }
-        if (parsed.pointColorLight === '#F7F4EF' || parsed.pointColorLight === '#F1F2F4') {
-          parsed.pointColorLight = '#F0F4F8';
-        }
-        if (parsed.siteName === '갤러리629' || parsed.siteName === 'Gallery LIM303' || parsed.siteName === 'GALLERY LIM303') {
-          parsed.siteName = 'LIM303 GALLERY';
-        }
-        if (parsed.siteSubName === 'GALLERY 629' || parsed.siteSubName === 'Gallery LIM303' || parsed.siteSubName === 'GALLERY LIM303' || parsed.siteSubName === 'LIM303 GALLERY') {
-          parsed.siteSubName = 'PROJECT & EXHIBITION SPACE';
-        }
-        if (
-          !parsed.aboutImage || 
-          parsed.aboutImage === 'https://images.unsplash.com/photo-1494438639946-1ebd1d2038b5?q=80&w=1000' ||
-          parsed.aboutImage === 'https://images.unsplash.com/photo-1518998053901-5348d3961a04?q=80&w=1200'
-        ) {
-          parsed.aboutImage = INITIAL_CONFIG.aboutImage;
-        }
-        if (parsed.aboutText) {
-          parsed.aboutText = parsed.aboutText
-            .replace(/갤러리629/g, 'LIM303 GALLERY')
-            .replace(/Gallery LIM303/g, 'LIM303 GALLERY')
-            .replace(/GALLERY LIM303/g, 'LIM303 GALLERY');
-        }
-        if (!parsed.heroBackgroundImage) {
-          parsed.heroBackgroundImage = INITIAL_CONFIG.heroBackgroundImage;
-        }
-        if (!parsed.heroBackgroundMode) {
-          parsed.heroBackgroundMode = 'minimal';
-        }
-        if (parsed.heroOverlayOpacity === undefined) {
-          parsed.heroOverlayOpacity = 0;
-        }
-        // Update Space Specification to new defaults
-        if (!parsed.rentalArea || parsed.rentalArea.includes('145㎡')) {
-          parsed.rentalArea = '116㎡ (약 35평)';
-        }
-        if (!parsed.rentalHeight || parsed.rentalHeight.includes('3.6m')) {
-          parsed.rentalHeight = '2.6m ~ 4.0m';
-        }
-        if (!parsed.rentalCapacity || parsed.rentalCapacity.includes('80명')) {
-          parsed.rentalCapacity = '최대 60명 동시 수용 가능';
-        }
-        if (!parsed.aboutImages || parsed.aboutImages.length === 0) {
-          parsed.aboutImages = INITIAL_CONFIG.aboutImages;
-        }
-        if (!parsed.phone || parsed.phone === '02-730-0629') {
-          parsed.phone = '010-8020-5499';
-        }
-        if (!parsed.email || parsed.email === 'contact@lim303gallery.com') {
-          parsed.email = 'lim303gallery@gmail.com';
-        }
-        if (!parsed.floorPlanImage) {
-          parsed.floorPlanImage = INITIAL_CONFIG.floorPlanImage;
-        }
-        if (!parsed.formspreeEndpoint) {
-          parsed.formspreeEndpoint = INITIAL_CONFIG.formspreeEndpoint;
-        }
-        return parsed;
+        // Guarantee all updated default fields are properly merged
+        return {
+          ...INITIAL_CONFIG,
+          ...parsed,
+          siteName: 'LIM303 GALLERY',
+          phone: parsed.phone || INITIAL_CONFIG.phone,
+          email: parsed.email || INITIAL_CONFIG.email,
+          rentalArea: parsed.rentalArea || INITIAL_CONFIG.rentalArea,
+          rentalCapacity: parsed.rentalCapacity || INITIAL_CONFIG.rentalCapacity,
+          rentalHeight: parsed.rentalHeight || INITIAL_CONFIG.rentalHeight,
+          rentalEquipment: parsed.rentalEquipment || INITIAL_CONFIG.rentalEquipment,
+          floorPlanImage: parsed.floorPlanImage || INITIAL_CONFIG.floorPlanImage,
+          showHeroCurrentExhibition: parsed.showHeroCurrentExhibition ?? INITIAL_CONFIG.showHeroCurrentExhibition,
+          formspreeEndpoint: parsed.formspreeEndpoint || INITIAL_CONFIG.formspreeEndpoint,
+        };
       } catch (e) {
         console.error('Failed to parse saved config, using initial default.');
       }
@@ -94,16 +59,13 @@ export default function App() {
   });
 
   const [posts, setPosts] = useState<ExhibitionPost[]>(() => {
-    const saved = localStorage.getItem('g629_posts');
+    const saved = localStorage.getItem(POSTS_STORAGE_KEY);
     if (saved) {
       try {
         const parsed: ExhibitionPost[] = JSON.parse(saved);
-        return parsed.map((p) => {
-          if (p.imageUrl === 'https://images.unsplash.com/photo-1577083552431-6e5fd01aa342?q=80&w=1200') {
-            return { ...p, imageUrl: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=80&w=800' };
-          }
-          return p;
-        });
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
       } catch (e) {
         console.error('Failed to parse saved posts, using initial default.');
       }
@@ -112,10 +74,11 @@ export default function App() {
   });
 
   const [inquiries, setInquiries] = useState<RentalInquiry[]>(() => {
-    const saved = localStorage.getItem('g629_inquiries');
+    const saved = localStorage.getItem(INQUIRIES_STORAGE_KEY);
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
       } catch (e) {
         console.error('Failed to parse saved inquiries, using initial default.');
       }
@@ -129,15 +92,27 @@ export default function App() {
 
   // Sync to local storage when state changes
   useEffect(() => {
-    localStorage.setItem('g629_config', JSON.stringify(config));
+    try {
+      localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(config));
+    } catch {
+      // ignore
+    }
   }, [config]);
 
   useEffect(() => {
-    localStorage.setItem('g629_posts', JSON.stringify(posts));
+    try {
+      localStorage.setItem(POSTS_STORAGE_KEY, JSON.stringify(posts));
+    } catch {
+      // ignore
+    }
   }, [posts]);
 
   useEffect(() => {
-    localStorage.setItem('g629_inquiries', JSON.stringify(inquiries));
+    try {
+      localStorage.setItem(INQUIRIES_STORAGE_KEY, JSON.stringify(inquiries));
+    } catch {
+      // ignore
+    }
   }, [inquiries]);
 
   // Open customizer automatically when admin logs in for a super seamless UX
