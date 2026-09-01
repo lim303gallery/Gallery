@@ -4,7 +4,7 @@
  */
 
 import React, { useRef, useState } from 'react';
-import { MapPin, Clock, CalendarIcon, Mail, Phone, Upload, Check, ChevronLeft, ChevronRight, Plus, Trash2, Image as ImageIcon } from 'lucide-react';
+import { MapPin, Clock, CalendarIcon, Mail, Phone, Upload, Check, ChevronLeft, ChevronRight, Plus, Trash2, Image as ImageIcon, ExternalLink, Navigation } from 'lucide-react';
 import { GalleryConfig } from '../types.ts';
 
 interface AboutProps {
@@ -180,11 +180,33 @@ export default function About({ config, onUpdateConfig, isAdmin = false }: About
 
             {/* Premium Info Panel */}
             <div className="bg-zinc-50 border border-zinc-150 rounded-xl p-6 md:p-8 space-y-4">
-              <div className="flex items-start space-x-3 text-sm">
-                <MapPin className="text-zinc-400 mt-0.5 shrink-0" size={16} />
-                <div>
-                  <span className="font-bold text-zinc-800 block mb-0.5">위치 안내</span>
-                  <span className="text-zinc-650">{config.address}</span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-start space-x-3 text-sm">
+                  <MapPin className="text-zinc-400 mt-0.5 shrink-0" size={16} />
+                  <div>
+                    <span className="font-bold text-zinc-800 block mb-0.5">위치 안내</span>
+                    <span className="text-zinc-700 font-medium">{config.address}</span>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2 shrink-0 pl-7 sm:pl-0">
+                  <a
+                    href={`https://map.naver.com/p/search/${encodeURIComponent(config.address)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-2.5 py-1 text-[11px] font-semibold bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200 rounded-lg flex items-center space-x-1 transition-colors"
+                  >
+                    <span>네이버지도</span>
+                    <ExternalLink size={11} />
+                  </a>
+                  <a
+                    href={`https://map.kakao.com/link/search/${encodeURIComponent(config.address)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-2.5 py-1 text-[11px] font-semibold bg-amber-50 text-amber-900 hover:bg-amber-100 border border-amber-200 rounded-lg flex items-center space-x-1 transition-colors"
+                  >
+                    <span>카카오맵</span>
+                    <ExternalLink size={11} />
+                  </a>
                 </div>
               </div>
 
